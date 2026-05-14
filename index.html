@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KKTC İhale Takip</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Calibri, sans-serif;
+            background: #f4f6f9;
+            color: #333;
+            font-size: 14px;
+        }
+        header {
+            background: #1F4E79;
+            color: white;
+            padding: 20px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 { font-size: 20px; font-weight: 600; }
+        header .meta { font-size: 12px; opacity: 0.8; text-align: right; }
+        .stats {
+            display: flex;
+            gap: 16px;
+            padding: 16px 32px;
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .stat-box {
+            background: #f0f4f8;
+            border-radius: 8px;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        .stat-box .sayi { font-size: 24px; font-weight: 700; color: #1F4E79; }
+        .stat-box .etiket { font-size: 11px; color: #666; margin-top: 2px; }
+        .container { padding: 16px 32px; }
+        .arama-bar {
+            margin-bottom: 12px;
+            display: flex;
+            gap: 8px;
+        }
+        .arama-bar input {
+            flex: 1;
+            padding: 8px 14px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+        }
+        .arama-bar input:focus { border-color: #1F4E79; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        thead tr {
+            background: #1F4E79;
+            color: white;
+        }
+        th {
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: top;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #f7f9fc; }
+        tr.urgent td { background: #fff0f0; }
+        tr.urgent:hover td { background: #ffe0e0; }
+        tr.soon td { background: #fff8ee; }
+        tr.soon:hover td { background: #fff0d8; }
+        .konu { max-width: 320px; font-size: 13px; }
+        .tarih { white-space: nowrap; }
+        .kalan { white-space: nowrap; font-weight: 600; text-align: center; }
+        tr.urgent .kalan { color: #c0392b; }
+        tr.soon .kalan { color: #e67e22; }
+        a { color: #1F4E79; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .badge-yeni {
+            display: inline-block;
+            background: #27ae60;
+            color: white;
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 10px;
+            margin-left: 6px;
+            vertical-align: middle;
+            font-weight: 600;
+        }
+        .legend {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 10px;
+            font-size: 12px;
+            align-items: center;
+        }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .dot { width: 12px; height: 12px; border-radius: 3px; }
+        .dot-red { background: #fff0f0; border: 1px solid #e0a0a0; }
+        .dot-orange { background: #fff8ee; border: 1px solid #e0c080; }
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #aaa;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🏛 KKTC Maliye Bakanlığı — Açık İhaleler</h1>
+        <div class="meta">
+            Son güncelleme: 14.05.2026 11:24<br>
+            Kaynak: mik.gov.ct.tr
+        </div>
+    </header>
+
+    <div class="stats">
+        <div class="stat-box">
+            <div class="sayi">135</div>
+            <div class="etiket">Açık İhale</div>
+        </div>
+        <div class="stat-box">
+            <div class="sayi">11</div>
+            <div class="etiket">3 Gün İçinde Kapanıyor</div>
+        </div>
+        <div class="stat-box">
+            <div class="sayi">0</div>
+            <div class="etiket">Yeni İhale</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="arama-bar">
+            <input type="text" id="aramaInput" placeholder="Kurum, ihale no veya konu ara..." oninput="filtrele()">
+        </div>
+        <div class="legend">
+            <span>Renk göstergesi:</span>
+            <span class="legend-item"><span class="dot dot-red"></span> 0–3 gün</span>
+            <span class="legend-item"><span class="dot dot-orange"></span> 4–7 gün</span>
+        </div>
+        <table id="ihaleTablosu">
+            <thead>
+                <tr>
+                    <th>İhale No</th>
+                    <th>Kurum</th>
+                    <th>İşin Konusu</th>
+                    <th>Tahmini Bedel</th>
+                    <th>Kapanış Tarihi</th>
+                    <th>Kalan Gün</th>
+                    <th>Detay</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyIhale">
+                
+        <tr class="urgent">
+            <td>220/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">Yeni Güzelyurt  Devlet Hastanesinde kullanılmak üzere Tanı, Muayene, Rehabilitasyon ve Yardımcı Tıbbi Cihazlar Alım İhalesi için teklif kabul edilir.</td>
+            <td>145,600.00 USD</td>
+            <td class="tarih">14/05/2026</td>
+            <td class="kalan">Bugün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9331" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="urgent">
+            <td>219/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">Yeni Güzelyurt  Devlet Hastanesinde kullanılmak üzere Yatak ve Sedye Alım İhalesi için teklif kabul edilir.</td>
+            <td>93,300.00 USD</td>
+            <td class="tarih">14/05/2026</td>
+            <td class="kalan">Bugün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9327" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="urgent">
+            <td>222/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">Yeni Güzelyurt  Devlet Hastanesinde kullanılmak üzere  Tedavi, Yaşam Desteği ve Girişimsel Cihazları İhalesi için teklif kabul edilir.</td>
+            <td>142,750.00 USD</td>
+            <td class="tarih">14/05/2026</td>
+            <td class="kalan">Bugün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9320" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="urgent">
+            <td>221/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">Yeni Güzelyurt  Devlet Hastanesinde kullanılmak üzere  Medikal Araba Alım İhalesi için teklif kabul edilir.</td>
+            <td>37,525.00 USD</td>
+            <td class="tarih">14/05/2026</td>
+            <td class="kalan">Bugün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9332" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="urgent">
+            <td>209/2026</td>
+            <td>İçişleri Bakanlığı</td>
+            <td class="konu">İçişleri Bakanlığı, Fişek Alımı için teklif kabul edilir.</td>
+            <td>1.548.000 TL</td>
+            <td class="tarih">15/05/2026</td>
+            <td class="kalan">+1 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9338" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="urgent">
+            <td>136/2026</td>
+            <td>Devlet Emlak ve Malzeme Dairesi Mdrl.</td>
+            <td class="konu">Devlet Emlak ve Malzeme Dairesi;  Renkli ve Beyaz  Kağıt  Alımı için teklif kabul edilir.</td>
+            <td>20.000,000,00 TL</td>
+            <td class="tarih">15/05/2026</td>
+            <td class="kalan">+1 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9340" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="urgent">
+            <td>137/2026</td>
+            <td>Devlet Emlak ve Malzeme Dairesi Mdrl.</td>
+            <td class="konu">Duyuru Tarihi:15.04.2026 Devlet Emlak ve Malzeme Dairesi;  A3-A4-A5  Kağıt  Alımı için teklif kabul edilir.</td>
+            <td>17.177,000,00 TL</td>
+            <td class="tarih">15/05/2026</td>
+            <td class="kalan">+1 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9341" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="urgent">
+            <td>228/2026</td>
+            <td>Başbakanlık</td>
+            <td class="konu">Başbakanlık Uyuşturucu İle Mücadele Komisyonu’na Bilişsel ve Sistemik Yaklaşım Temeli  Hizmet Alımı İhalesi için teklif kabul edilir.</td>
+            <td>31.053.620,68 TL</td>
+            <td class="tarih">15/05/2026</td>
+            <td class="kalan">+1 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9321" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="urgent">
+            <td>167/2026</td>
+            <td>Devlet Emlak ve Malzeme Dairesi Mdrl.</td>
+            <td class="konu">Devlet Emlak ve Malzeme Dairesi  Hesap Makinesi, Telefon, Bayrak Alımı için teklif kabul edilir.</td>
+            <td>2.601.000,00 TL</td>
+            <td class="tarih">15/05/2026</td>
+            <td class="kalan">+1 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9336" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="urgent">
+            <td>225/2026</td>
+            <td>Güvenlik Kuvvetleri Komutanlığı</td>
+            <td class="konu">Güvenlik Kuvvetleri Komutanlığı,  Muhtelif Bayrak Alımı için teklif kabul edilir.</td>
+            <td>3.417.350 TL</td>
+            <td class="tarih">15/05/2026</td>
+            <td class="kalan">+1 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9337" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="urgent">
+            <td>138/2026</td>
+            <td>Devlet Emlak ve Malzeme Dairesi Mdrl.</td>
+            <td class="konu">Duyuru Tarihi:15.04.2026 Devlet Emlak ve Malzeme Dairesi; Biristol Renkli ve Beyaz  Karton  Alımı için teklif kabul edilir.</td>
+            <td>5.940,000,00 TL</td>
+            <td class="tarih">15/05/2026</td>
+            <td class="kalan">+1 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9342" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="soon">
+            <td>154/2026</td>
+            <td>Milli Eğitim Bakanlığı</td>
+            <td class="konu">Milli Eğitim Bakanlığına Bağlı Okullara Öğrenci  Sıra Masası ve Öğretmen, Öğrenci Sandalyesi  Alım  İhalesi için teklif kabul edilir.</td>
+            <td> TL</td>
+            <td class="tarih">18/05/2026</td>
+            <td class="kalan">+4 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9222" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="soon">
+            <td>135/2026</td>
+            <td>Polis Genel Müdürlüğü</td>
+            <td class="konu">Polis Okulu Müdürlüğünde Eğitimleri Devam Eden Polis Mensubu Aday Adayları İle Eğitmenler İçin Yemek Pişirme ve Yedirme Hizmeti  Alımı için teklif kabul edilir.</td>
+            <td>5,357,768.07 TL</td>
+            <td class="tarih">18/05/2026</td>
+            <td class="kalan">+4 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9230" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="soon">
+            <td>211/2026</td>
+            <td>(Kıb-Tek) K.T. Elektrik Kurumu</td>
+            <td class="konu">KIB-TEK Lefke Bölge Amirliği Binası Yapım İşleri için teklif kabul edilir.</td>
+            <td>5,536,580.00 TL</td>
+            <td class="tarih">18/05/2026</td>
+            <td class="kalan">+4 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9343" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="soon">
+            <td>112/2026</td>
+            <td>Sosyal Hizmetler Dairesi Müdürlüğü</td>
+            <td class="konu">Sosyal Hizmetler Dairesi  Kalkanlı  Yaşamevi  Çamaşır  Hizmet Alımı için teklif kabul edilir.</td>
+            <td>2.744.231,07 TL</td>
+            <td class="tarih">18/05/2026</td>
+            <td class="kalan">+4 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9348" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="soon">
+            <td>155/2026</td>
+            <td>Tapu ve Kadastro Dairesi</td>
+            <td class="konu">Tapu ve Kadastro Dairesi Müdürlüğü Temizlik  Hizmet  Alımı için teklif kabul edilir.</td>
+            <td>731,790 TL</td>
+            <td class="tarih">18/05/2026</td>
+            <td class="kalan">+4 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9228" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="soon">
+            <td>080/2026</td>
+            <td>Su İşleri Dairesi Müdürlüğü</td>
+            <td class="konu">Su İşleri Dairesi, Köylerde ve Ana Hatlarda Değişmesi  Gereken  Kısımlar  İçin Su İşleri Dairesi Ambarına Muhtelif  Malzeme  Alımı için teklif kabul edilir.</td>
+            <td>34,555,270.60 TL</td>
+            <td class="tarih">18/05/2026</td>
+            <td class="kalan">+4 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9248" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="soon">
+            <td>196/2026</td>
+            <td>Milli Arşiv ve Araştırma Dairesi</td>
+            <td class="konu">Temizlik  Hizmet Alımı  (Malzemesiz) için teklif kabul edilir.</td>
+            <td>764,543.3 TL</td>
+            <td class="tarih">18/05/2026</td>
+            <td class="kalan">+4 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9249" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="soon">
+            <td>200/2026</td>
+            <td>(Kıb-Tek) K.T. Elektrik Kurumu</td>
+            <td class="konu">KIBRIS TÜRK ELEKTRİK KURUMU (KIB – TEK) 75 Ton Sülfürik Asit için teklif kabul edilir.</td>
+            <td>66.937.50 USD</td>
+            <td class="tarih">18/05/2026</td>
+            <td class="kalan">+4 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9344" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="soon">
+            <td>081/2026</td>
+            <td>Gelir ve Vergi Dairesi</td>
+            <td class="konu">Gelir ve Vergi Dairesi – Devlet Emlak ve Malzeme Dairesi Temizlik  Hizmet Alımı için teklif kabul edilir.</td>
+            <td>8.418.251,16 TL</td>
+            <td class="tarih">18/05/2026</td>
+            <td class="kalan">+4 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9227" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="soon">
+            <td>177/2026</td>
+            <td>Karayolları Dairesi Müdürlüğü</td>
+            <td class="konu">Karayolları  Dairesi ,Lefkoşa – Güzelyurt Anayolu 1. Etap  Otokorkuluk  Temini ve Montajı  İşleri  Mal ve Hizmet Alım İhalesi  için tekli kabul edilir. İhale için ayrılmış toplam tahmini değer :  34,000,000.00 TL   ( KDV HARİÇ ) ZEYİLNAME yayınlanmıştır. 03.04.2026</td>
+            <td>34,000,000.00 TL</td>
+            <td class="tarih">18/05/2026</td>
+            <td class="kalan">+4 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9229" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="soon">
+            <td>176/2026</td>
+            <td>Karayolları Dairesi Müdürlüğü</td>
+            <td class="konu">Lefkoşa – Gazimğusa Arası Anayolda Asfalt Kaplama Yapım İşi İhalesi  için tekli kabul edilir. İhale için ayrılmış toplam tahmini değer : 6,086,712 .00 TL  +  KDV ( %10 ) ZEYİLNAME yayınlanmıştır. 10.04.2026 20/2016 Kamu İhale Yasası'nın 30. Maddesinin 5. Fıkrası uyarınca İhale İPTAL EDİLMİŞTİR.</td>
+            <td>6,086,712 .00 TL</td>
+            <td class="tarih">20/05/2026</td>
+            <td class="kalan">+6 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9223" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="soon">
+            <td>103/2026</td>
+            <td>Sosyal Hizmetler Dairesi Müdürlüğü</td>
+            <td class="konu">Sosyal Hizmetler Dairesi   Müdürlüğü ve Bölge Amirliklerindeki  Temizlik  Hizmet Alımı için teklif kabul edilir.</td>
+            <td>2,981,387.28 TL</td>
+            <td class="tarih">20/05/2026</td>
+            <td class="kalan">+6 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9235" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="soon">
+            <td>113/2026</td>
+            <td>Sosyal Hizmetler Dairesi Müdürlüğü</td>
+            <td class="konu">Sosyal Hizmetler Dairesi Sınırüstü Yaşamevi Temizlik ve Mutfak İşleri  Hizmet Alımı için teklif kabul edilir.</td>
+            <td>8.706.896,56 TL</td>
+            <td class="tarih">20/05/2026</td>
+            <td class="kalan">+6 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9246" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="soon">
+            <td>058/2026</td>
+            <td>İçişleri Bakanlığı</td>
+            <td class="konu">İçişleri Bakanlığı, Hayvansal Atık Bertaraf İhalesi için teklif kabul edilir.</td>
+            <td>3.490.937,17 TL</td>
+            <td class="tarih">20/05/2026</td>
+            <td class="kalan">+6 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9205" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="soon">
+            <td>116/2026</td>
+            <td>Sosyal Hizmetler Dairesi Müdürlüğü</td>
+            <td class="konu">Sosyal Hizmetler Dairesi Sınırüstü Yaşamevi Hasta Arabakım  Hizmet Alımı için teklif kabul edilir.</td>
+            <td>14.482.758,62 TL</td>
+            <td class="tarih">20/05/2026</td>
+            <td class="kalan">+6 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9244" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="soon">
+            <td>115/2026</td>
+            <td>Sosyal Hizmetler Dairesi Müdürlüğü</td>
+            <td class="konu">Sosyal Hizmetler Dairesi Sınırüstü Yaşamevi Çamaşır İşleri  Hizmet Alımı için teklif kabul edilir.</td>
+            <td>2.896.551,73 TL</td>
+            <td class="tarih">20/05/2026</td>
+            <td class="kalan">+6 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9245" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="soon">
+            <td>111/2026</td>
+            <td>Sosyal Hizmetler Dairesi Müdürlüğü</td>
+            <td class="konu">Sosyal Hizmetler Dairesi  Kalkanlı  Yaşamevi  Temizlik  Hizmet Alımı için teklif kabul edilir.</td>
+            <td>15.178.017,25 TL</td>
+            <td class="tarih">20/05/2026</td>
+            <td class="kalan">+6 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9351" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="soon">
+            <td>084/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">Sağlık  Bakanlığı , Dr. Burhan Nalbatoğlu Devlet Hastanesi, Ataktan Tanı Merkezi,Onkoloji Merkezi,Acil Durum (Pandemi) Merkezi, Gazi Mağusa Devlet Hastanesi,Girne Dr. Akçiçek Hastanesi,Lefke Cengiz Topel Hastanesi ve Barış Ruh Hastanesi Euro Dizel temini için teklif kabul edilir.</td>
+            <td>7.727.272,73 EUR</td>
+            <td class="tarih">20/05/2026</td>
+            <td class="kalan">+6 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9226" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="soon">
+            <td>140/2026</td>
+            <td>Polis Genel Müdürlüğü</td>
+            <td class="konu">Polis Genel Müdürlüğü Jeneratör Cihazı Alımı için teklif kabul edilir.</td>
+            <td>1.982,758,62 TL</td>
+            <td class="tarih">20/05/2026</td>
+            <td class="kalan">+6 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9231" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="soon">
+            <td>083/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">Sağlık  Bakanlığı , Dr. Burhan Nalbatoğlu Devlet Hastanesi, Ataktan Tanı Merkezi,Onkoloji Merkezi,Acil Durum (Pandemi) Merkezi ve Kalkanlı Yaşamevi’ne LPG Dökme Gaz temini için teklif kabul edilir.</td>
+            <td>18.181.818,18 TL</td>
+            <td class="tarih">20/05/2026</td>
+            <td class="kalan">+6 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9225" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>178/2026</td>
+            <td>Karayolları Dairesi Müdürlüğü</td>
+            <td class="konu">Karayolları Dairesi Müdürlüğü Kurudere-Turunçlu Arası Anayolda Asfalt Kaplama Yapım İşi için teklif kabul edilir.</td>
+            <td>2.915.966,21 TL</td>
+            <td class="tarih">22/05/2026</td>
+            <td class="kalan">+8 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9263" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>179/2026</td>
+            <td>Karayolları Dairesi Müdürlüğü</td>
+            <td class="konu">Karayolları Dairesi Müdürlüğü Cihangir-İskele Arası Anayolda Asfalt Kaplama Yapım İşleri için teklif kabul edilir.</td>
+            <td>33.648.640,00 TL</td>
+            <td class="tarih">22/05/2026</td>
+            <td class="kalan">+8 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9266" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>180/2026</td>
+            <td>Karayolları Dairesi Müdürlüğü</td>
+            <td class="konu">Karayolları Dairesi Müdürlüğü Güzelyurt – Kalkanlı Kvş. İle Güzelyurt – Lefke Kvş. Arası yolun Mekanik ve Asfalt Yapım İşleri için teklif kabul edilir.</td>
+            <td>38,441,891.11 TL</td>
+            <td class="tarih">22/05/2026</td>
+            <td class="kalan">+8 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9268" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>195/2026</td>
+            <td>Polis Genel Müdürlüğü</td>
+            <td class="konu">Polis Genel Müdürlüğü  Akaryakıt Alımı için teklif kabul edilir.</td>
+            <td>21.982,758,62 TL</td>
+            <td class="tarih">22/05/2026</td>
+            <td class="kalan">+8 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9274" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>074/2026</td>
+            <td>Devlet Laboratuvarı Dairesi</td>
+            <td class="konu">Devlet Labaratuvarı Dairesi ; (Malzemesiz) Temizlik ,Bakım   ve  Dezenfekte  İşleri   Hizmet   Alımı  için teklif  kabul edilir. İhale için ayrılmış toplam tahmini değer:              6.901.336,21   TL + KDV İhale için ayrılmış aylık ödenek (bloke) miktarı:     766.815,13   TL   + KDV Geçici teminat miktarı:                                            150.000.- TL</td>
+            <td>6.901.336,21 TL</td>
+            <td class="tarih">22/05/2026</td>
+            <td class="kalan">+8 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9278" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>187/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">1 Adet Florometrik Cihazı Alımı için teklif kabul edilir.</td>
+            <td>44,750 USD</td>
+            <td class="tarih">22/05/2026</td>
+            <td class="kalan">+8 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9270" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>188/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">1 Adet Forklift Alımı için teklif kabul edilir.</td>
+            <td>38.000 EUR</td>
+            <td class="tarih">22/05/2026</td>
+            <td class="kalan">+8 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9271" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>198/2026</td>
+            <td>Güzelyurt Kaymakamlığı</td>
+            <td class="konu">Temizlik  Hizmet Alımı için teklif kabul edilir.</td>
+            <td>606,478.24 TL</td>
+            <td class="tarih">22/05/2026</td>
+            <td class="kalan">+8 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9247" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>123/2026</td>
+            <td>Temel Sağlık Hizmetleri Dairesi  Müdürlüğü</td>
+            <td class="konu">Temel Sağlık Hizmetleri Dairesi’ne Bağlı Sağlık Ocağı ve Merkezlerin (Malzemeli) Temizlik Bakım ve İlaçlama Hizmetleri  Alımı  İhalesi için teklif kabul edilir.</td>
+            <td>21.742.805,25 TL</td>
+            <td class="tarih">22/05/2026</td>
+            <td class="kalan">+8 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9356" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>185/2026</td>
+            <td>Telekomünikasyon Dairesi Müdürlüğü</td>
+            <td class="konu">Bayındırlık ve Ulaştırma Bakanlığı, Telekomünikasyon Dairesi  muhtelif cins ve miktarda telekomünikasyon malzemeleri alımı için teklif kabul edilir.</td>
+            <td>3,123,770.60 TL</td>
+            <td class="tarih">25/05/2026</td>
+            <td class="kalan">+11 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9281" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>245/2026</td>
+            <td>(Kıb-Tek) K.T. Elektrik Kurumu</td>
+            <td class="konu">K. T. Elektrik Kurumu (Kıb-Tek) Gazimağusa Bölge Amirliği Binası Yapim Işi için teklif kabul edilir.</td>
+            <td>61,307,346,51 TL</td>
+            <td class="tarih">25/05/2026</td>
+            <td class="kalan">+11 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9358" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>204/2026</td>
+            <td>Devlet Emlak ve Malzeme Dairesi Mdrl.</td>
+            <td class="konu">Devlet Emlak ve Malzeme Dairesi; Kirtasiye Malzemesi Alimi için teklif kabul edilir.</td>
+            <td>8.505.000 TL</td>
+            <td class="tarih">25/05/2026</td>
+            <td class="kalan">+11 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9359" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>186/2026</td>
+            <td>Telekomünikasyon Dairesi Müdürlüğü</td>
+            <td class="konu">Bayındırlık ve Ulaştırma Bankanlığı, Telekomünikasyon Dairesi muhtelif kapasite ve miktarda bakır telefon kablosu malzemeleri alımı için teklif kabul edilir.</td>
+            <td>13,069,415.00 TL</td>
+            <td class="tarih">25/05/2026</td>
+            <td class="kalan">+11 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9282" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>054/2026</td>
+            <td>Trafik Dairesi</td>
+            <td class="konu">Araç Kayıt Muayene ve Ruhsatlandırma Şubesi ve Sürüş Müfettişliği Binası  Temizlik  Hizmet Alımı İhale için ayrılmış toplam tahmini değer:              1,690.083.58 TL ( KDV HARİÇ) İhale için ayrılmış aylık ödenek (bloke)miktarı:     153.363,54 TL (KDV HARİÇ) Geçici teminat miktarı:                                              50.000.- TL</td>
+            <td>1,690.083.58 TL</td>
+            <td class="tarih">25/05/2026</td>
+            <td class="kalan">+11 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9279" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>173/2026</td>
+            <td>Sivil Savunma Teşkilat Başkanlığı</td>
+            <td class="konu">Güvenlik  Hizmet Alımı için teklif kabul edilir.</td>
+            <td>4,285.775 TL</td>
+            <td class="tarih">25/05/2026</td>
+            <td class="kalan">+11 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9280" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>118/2026</td>
+            <td>Bayrak Radyo ve Televizyon Kurumu (BRTK)</td>
+            <td class="konu">BRTK Merkezi, Jeneratör Temini Projesi için teklif kabul edilir.</td>
+            <td>2.155,172 TL</td>
+            <td class="tarih">25/05/2026</td>
+            <td class="kalan">+11 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9284" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>244/2026</td>
+            <td>Güvenlik Kuvvetleri Komutanlığı</td>
+            <td class="konu">Güvenlik  Kuvvetleri  Komutanlığı,  Muhtelif   Yiyecek   ve  İçecek  Alımı İhale için ayrılmış toplam tahmini değer:  14.801.750,00  TL</td>
+            <td>14.801.750,00 TL</td>
+            <td class="tarih">25/05/2026</td>
+            <td class="kalan">+11 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9377" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>205/2026</td>
+            <td>Devlet Emlak ve Malzeme Dairesi Mdrl.</td>
+            <td class="konu">Devlet Emlak ve Malzeme Dairesi; Toner Alımı için teklif kabul edilir.</td>
+            <td>20.440.000 TL</td>
+            <td class="tarih">25/05/2026</td>
+            <td class="kalan">+11 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9360" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>234/2026</td>
+            <td>Tarım ve Doğal Kaynaklar Bakanlığı</td>
+            <td class="konu">Tarım ve Doğal Kaynaklar Bakanlığı, Cypfruvex Jeneratör Alımı  İhalesi için teklif kabul edilir.</td>
+            <td>36,550,000 TL</td>
+            <td class="tarih">25/05/2026</td>
+            <td class="kalan">+11 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9367" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>117/2026</td>
+            <td>Merkezi Cezaevi Müdürlüğü</td>
+            <td class="konu">Merkezi  Cezaevi  Müdürlüğü  Taşımalı Yemek  Hizmet  Alımı için teklif kabul edilir.</td>
+            <td>679,975,572.09 TL</td>
+            <td class="tarih">04/06/2026</td>
+            <td class="kalan">+21 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9378" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>091/2026</td>
+            <td>Limanlar Dairesi Müdürlüğü</td>
+            <td class="konu">Bayındırlık ve Ulaştırma  Bakanlığı Bağlı Limanlar Dairesi Müdürlüğü Girne Limanı Temizlik  Hizmet Alımı için teklif kabul edilir.</td>
+            <td>4.600.906,03 TL</td>
+            <td class="tarih">05/06/2026</td>
+            <td class="kalan">+22 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9243" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>065/2026</td>
+            <td>Polis Genel Müdürlüğü</td>
+            <td class="konu">Polis Genel  Müdürlüğü Binası, Temizlik ve Bahçe İşleri Hizmet Alımı için teklif kabul edilir.</td>
+            <td>3,067,270.80 TL</td>
+            <td class="tarih">05/06/2026</td>
+            <td class="kalan">+22 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9252" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>066/2026</td>
+            <td>Polis Genel Müdürlüğü</td>
+            <td class="konu">Lefkoşa  Polis  Müdürlüğü Binası, Temizlik ve Bahçe İşleri Hizmet Alımı için teklif kabul edilir.</td>
+            <td>613,454.16 TL</td>
+            <td class="tarih">05/06/2026</td>
+            <td class="kalan">+22 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9253" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>068/2026</td>
+            <td>Polis Genel Müdürlüğü</td>
+            <td class="konu">Girne  Polis Müdürlüğü Binası, Temizlik ve Bahçe İşleri Hizmet Alımı için teklif kabul edilir.</td>
+            <td>1,840,362.48 TL</td>
+            <td class="tarih">05/06/2026</td>
+            <td class="kalan">+22 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9255" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>069/2026</td>
+            <td>Polis Genel Müdürlüğü</td>
+            <td class="konu">Güzelyurt  Polis Genel  Müdürlüğü Binası, Temizlik ve Bahçe İşleri Hizmet Alımı için teklif kabul edilir.</td>
+            <td>1,226,908.31 TL</td>
+            <td class="tarih">05/06/2026</td>
+            <td class="kalan">+22 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9256" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>072/2026</td>
+            <td>Polis Genel Müdürlüğü</td>
+            <td class="konu">Polis Okulu Müdürlüğü  Binası, Temizlik ve Bahçe İşleri Hizmet Alımı için teklif kabul edilir.</td>
+            <td>613,454.16 TL</td>
+            <td class="tarih">05/06/2026</td>
+            <td class="kalan">+22 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9259" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>073/2026</td>
+            <td>Polis Genel Müdürlüğü</td>
+            <td class="konu">Özel  Harekat  Müdürlüğü Binası, Temizlik ve Bahçe İşleri Hizmet Alımı için teklif kabul edilir.</td>
+            <td>613,454.16 TL</td>
+            <td class="tarih">05/06/2026</td>
+            <td class="kalan">+22 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9260" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>090/2026</td>
+            <td>Limanlar Dairesi Müdürlüğü</td>
+            <td class="konu">Bayındırlık ve Ulaştırma  Bakanlığı Bağlı Limanlar Dairesi Müdürlüğü Gazimağusa Limanı Temizlik  Hizmet Alımı için teklif kabul edilir.</td>
+            <td>5.367.724,14 TL</td>
+            <td class="tarih">05/06/2026</td>
+            <td class="kalan">+22 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9241" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>067/2026</td>
+            <td>Polis Genel Müdürlüğü</td>
+            <td class="konu">Gazimağusa  Polis  Müdürlüğü Binası, Temizlik ve Bahçe İşleri Hizmet Alımı için teklif kabul edilir.</td>
+            <td>1,226,908.31 TL</td>
+            <td class="tarih">05/06/2026</td>
+            <td class="kalan">+22 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9254" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>070/2026</td>
+            <td>Polis Genel Müdürlüğü</td>
+            <td class="konu">Narkotik ve Kaçakcılığı Önleme Müdürlüğü  ve Mali Polis Binaları, Temizlik ve Bahçe İşleri Hizmet Alımı için teklif kabul edilir.</td>
+            <td>613,454.16 TL</td>
+            <td class="tarih">05/06/2026</td>
+            <td class="kalan">+22 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9257" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>249/2026</td>
+            <td>(Kıb-Tek) K.T. Elektrik Kurumu</td>
+            <td class="konu">Kıbrıs Türk Elektrik Kurumu (Kıb-Tek) Ot Temizlik  Hizmet   Alımı için teklif kabul edilir.</td>
+            <td>7,921,500.00 TL</td>
+            <td class="tarih">05/06/2026</td>
+            <td class="kalan">+22 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9380" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>071/2026</td>
+            <td>Polis Genel Müdürlüğü</td>
+            <td class="konu">İskele  Polis  Müdürlüğü Binası, Temizlik ve Bahçe İşleri Hizmet Alımı için teklif kabul edilir.</td>
+            <td>1,840,362.48 TL</td>
+            <td class="tarih">05/06/2026</td>
+            <td class="kalan">+22 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9258" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>252/2026</td>
+            <td>Güvenlik Kuvvetleri Komutanlığı</td>
+            <td class="konu">Güvenlik Kuvvetleri Komutanlığı, Muhtelif Çöp Konteyneri ve Çöp Kovası  Alımı için teklif kabul edilir.</td>
+            <td>1.765.500,00 TL</td>
+            <td class="tarih">08/06/2026</td>
+            <td class="kalan">+25 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9383" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>253/2026</td>
+            <td>Güvenlik Kuvvetleri Komutanlığı</td>
+            <td class="konu">Güvenlik Kuvvetleri Komutanlığı, Muhtelif Mutfak ve Çamaşırhane Malzemesi Alımı için teklif kabul edilir.</td>
+            <td>4.000.000,00 TL</td>
+            <td class="tarih">08/06/2026</td>
+            <td class="kalan">+25 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9384" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>262/2026</td>
+            <td>Güvenlik Kuvvetleri Komutanlığı</td>
+            <td class="konu">Güvenlik Kuvvetleri Komutanlığı, Kuru Fasulye ve Yemeklik Ayçiçek Yağı Alımı için teklif kabul edilir.</td>
+            <td>13.550.000,00 TL</td>
+            <td class="tarih">08/06/2026</td>
+            <td class="kalan">+25 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9405" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>263/2026</td>
+            <td>Güvenlik Kuvvetleri Komutanlığı</td>
+            <td class="konu">Güvenlik Kuvvetleri Komutanlığı,  Yumurta Alımı için teklif kabul edilir.</td>
+            <td>4.800.000,00 TL</td>
+            <td class="tarih">08/06/2026</td>
+            <td class="kalan">+25 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9406" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>264/2026</td>
+            <td>Güvenlik Kuvvetleri Komutanlığı</td>
+            <td class="konu">Güvenlik Kuvvetleri Komutanlığı, Muhtelif  Peynir  ve  Tereyağı  Alımı için teklif kabul edilir.</td>
+            <td>11.907.200,00 TL</td>
+            <td class="tarih">08/06/2026</td>
+            <td class="kalan">+25 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9407" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>258/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">KKTC Sağlık Bakanlığı, Yeni Girne Hastanesi Dijital X-RAY Cihazı alımı  ihalesi için teklif kabul edilir.</td>
+            <td>50,900.00 EUR</td>
+            <td class="tarih">09/06/2026</td>
+            <td class="kalan">+26 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9389" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>259/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">KKTC Sağlık Bakanlığı, Yeni Girne Hastanesi Bilgisayar ve Yan Ürünleri alımı ihalesi için teklif kabul edilir.</td>
+            <td>224.000,00 USD</td>
+            <td class="tarih">09/06/2026</td>
+            <td class="kalan">+26 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9385" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>265/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">KKTC Sağlık Bakanlığı, 2026-2029 Dönemi Yenidoğan Yoğun Bakım TPN Ünitesi alımı ihalesi için teklif kabul edilir.</td>
+            <td>300.000,00 EUR</td>
+            <td class="tarih">09/06/2026</td>
+            <td class="kalan">+26 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9386" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>256/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">KKTC Sağlık Bakanlığı, Yeni Girne Hastanesi Cerrahi KBB Mikroskobu alımı  ihalesi için teklif kabul edilir.</td>
+            <td>150,000.00 EUR</td>
+            <td class="tarih">09/06/2026</td>
+            <td class="kalan">+26 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9387" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>257/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">KKTC Sağlık Bakanlığı, Yeni Girne Hastanesi Otomatik Enjektör Cihazı alımı  ihalesi için teklif kabul edilir.</td>
+            <td>40,000.00 EUR</td>
+            <td class="tarih">09/06/2026</td>
+            <td class="kalan">+26 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9388" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>206/2026</td>
+            <td>Dış İşleri Bakanlığı</td>
+            <td class="konu">KKTC Dışişleri Bakanlığı Temizlik  Hizmet Alımı  (Malzemesiz) için teklif kabul edilir.</td>
+            <td>2.070.407,72 TL</td>
+            <td class="tarih">10/06/2026</td>
+            <td class="kalan">+27 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9305" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>004/2026</td>
+            <td>(Kıb-Tek) K.T. Elektrik Kurumu</td>
+            <td class="konu">Kıbrıs Türk Elektrik Kurumu’nun Güzelyurt-Girne-Teknecik Elektrik Santralı Personel Taşıma için teklif kabul edilir.</td>
+            <td>3.347.580,95 TL</td>
+            <td class="tarih">10/06/2026</td>
+            <td class="kalan">+27 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9307" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>203/2026</td>
+            <td>Tarım Dairesi</td>
+            <td class="konu">Tarım Dairesi Müdürlüğü Mum Blok Fare Zehiri Alımı için teklif kabul edilir.</td>
+            <td>3.402.000.00 TL</td>
+            <td class="tarih">10/06/2026</td>
+            <td class="kalan">+27 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9310" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>194/2026</td>
+            <td>İçişleri Bakanlığı</td>
+            <td class="konu">İçişleri Bakanlığı İnad Yolcu Geri Gönderim Merkezi  Güvenlik İşleri  Hizmet Alımı      teklif kabul edilir. İhale için ayrılmış toplam tahmini değer:               7.896.551,67 -  TL ( KDV HARİÇ) İhale için ayrılmış aylık ödenek (bloke)miktarı:     877.394,63  - TL   (KDV HARİÇ) Geçici teminat miktarı:                                             150.000.- TL 24.04.2026 tarihinde zeyilname yapılmı</td>
+            <td>7.896.551,67 TL</td>
+            <td class="tarih">10/06/2026</td>
+            <td class="kalan">+27 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9302" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>174/2026</td>
+            <td>Karayolları Dairesi Müdürlüğü</td>
+            <td class="konu">Karayolları  Dairesi   Binası  için  Temizlik   Hizmet   Alımı  için teklif  kabul edilir. İhale için ayrılmış toplam tahmini değer:               766.818.00   TL + KDV İhale için ayrılmış aylık ödenek (bloke) miktarı:    76.681.80  TL   + KDV Geçici teminat miktarı:                                               25,000.- TL ZEYİLNAME 11.05.2026</td>
+            <td>766.818.00 TL</td>
+            <td class="tarih">10/06/2026</td>
+            <td class="kalan">+27 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9304" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>005/2026</td>
+            <td>(Kıb-Tek) K.T. Elektrik Kurumu</td>
+            <td class="konu">Kıbrıs Türk Elektrik Kurumu’nun Vardiya - Teknecik Elektrik Santralı Personel Taşıma için teklif kabul edilir.</td>
+            <td>5.242.526,29 TL</td>
+            <td class="tarih">10/06/2026</td>
+            <td class="kalan">+27 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9308" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>175/2026</td>
+            <td>Karayolları Dairesi Müdürlüğü</td>
+            <td class="konu">Karayolları  Dairesi , Otokorkuluk Temini ve Montaj  İşleri  Mal ve Hizmet Alımı. İhale için ayrılmış toplam tahmini değer :  12,670,352.00   ( KDV HARİÇ)</td>
+            <td>12,670,352.00 TL</td>
+            <td class="tarih">10/06/2026</td>
+            <td class="kalan">+27 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9291" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>082/2026</td>
+            <td>(Kıb-Tek) K.T. Elektrik Kurumu</td>
+            <td class="konu">Kıb-Tek  TATLISU TM 132 kV ENH BAĞLANTI HATTI İLE  Yeniboğaziçi-Mağusa II TM'ler arası  ve Teknecik-Alsancak TM’ler Arası ENH Tevsiat İşleri Projesi için teklif kabul edilir.</td>
+            <td>4,666,000 USD</td>
+            <td class="tarih">10/06/2026</td>
+            <td class="kalan">+27 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9292" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>190/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">1 Adet Klap- Akciğer Pompası Sistemi Alımı için teklif kabul edilir.</td>
+            <td>361,500 EUR</td>
+            <td class="tarih">10/06/2026</td>
+            <td class="kalan">+27 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9272" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>171/2026</td>
+            <td>Turizm ve Çevre Bakanlığı</td>
+            <td class="konu">BBY Turizm Kültür Gençlik ve Çevre Bakanlığı, Kumarcılar Hanı Temizlik lımı  (Malzemesiz) için teklif kabul edilir.</td>
+            <td>230.045,30 TL</td>
+            <td class="tarih">10/06/2026</td>
+            <td class="kalan">+27 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9298" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>201/2026</td>
+            <td>(Kıb-Tek) K.T. Elektrik Kurumu</td>
+            <td class="konu">KIB – TEK  Madeni Yağlama Yağı Alımı için teklif kabul edilir.</td>
+            <td>965.300,00 USD</td>
+            <td class="tarih">10/06/2026</td>
+            <td class="kalan">+27 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9303" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>008/2026</td>
+            <td>(Kıb-Tek) K.T. Elektrik Kurumu</td>
+            <td class="konu">Kıbrıs Türk Elektrik Kurumu’nun Lefkoşa - Teknecik Elektrik Santralı Personel Taşıma için teklif kabul edilir.</td>
+            <td>2.739.604,76 TL</td>
+            <td class="tarih">10/06/2026</td>
+            <td class="kalan">+27 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9309" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>159/2026</td>
+            <td>Milli Eğitim Bakanlığı</td>
+            <td class="konu">Milli Eğitim Bakanlığı Talim ve Terbiye Dairesi Müdürlüğü Ders Kitapları Basım İhalesi için teklif kabul edilir.</td>
+            <td>29.000.000,00 TL</td>
+            <td class="tarih">10/06/2026</td>
+            <td class="kalan">+27 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9322" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>151/2026</td>
+            <td>KKTC Kalkınma Bankası</td>
+            <td class="konu">Kalkınma Bankası  Asansör Alımı için teklif kabul edilir.</td>
+            <td>50.000 EUR</td>
+            <td class="tarih">10/06/2026</td>
+            <td class="kalan">+27 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9326" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>141/2026</td>
+            <td>Polis Genel Müdürlüğü</td>
+            <td class="konu">Polis Genel Müdürlüğü, Resmi Hizmet araçları için Tepe Lambası, Siren ve İkaz Sistemi Temini için teklif kabul edilir.</td>
+            <td>3.017,241,38 TL</td>
+            <td class="tarih">10/06/2026</td>
+            <td class="kalan">+27 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9328" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>142/2026</td>
+            <td>Polis Genel Müdürlüğü</td>
+            <td class="konu">Polis Genel Müdürlüğü bünyesinde kullanılmak üzere Masaüstü Bilgisayar Seti, El Tableti, Monitör, Klavye, Mouse Seti Temini için teklif kabul edilir.</td>
+            <td>7.117,793,10 TL</td>
+            <td class="tarih">10/06/2026</td>
+            <td class="kalan">+27 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9330" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>260/2026</td>
+            <td>İLKÖĞRETİM DAİRESİ MÜDÜRLÜĞÜ</td>
+            <td class="konu">Milli Eğitim Bakanlığı Muhtelif Defter ve Kırtasiye Alımı İhalesi için teklif kabul edilir.</td>
+            <td>7.236.206,90 TL</td>
+            <td class="tarih">12/06/2026</td>
+            <td class="kalan">+29 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9393" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>273/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">KKTC Sağlık Bakanlığı, Yeni Girne Hastanesi Endoskopik Cihazlar alımı ihalesi için teklif kabul edilir.</td>
+            <td>97.800,00 EUR</td>
+            <td class="tarih">12/06/2026</td>
+            <td class="kalan">+29 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9395" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>277/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">KKTC Sağlık Bakanlığı, Yeni Girne Hastanesi 4. Kısım Tıbbi Cihazlar alımı ihalesi için teklif kabul edilir.</td>
+            <td>134.020,00 EUR</td>
+            <td class="tarih">12/06/2026</td>
+            <td class="kalan">+29 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9397" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>274/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">KKTC Sağlık Bakanlığı, Yeni Girne Hastanesi 7.Kısım Tıbbi Cihazlar alımı ihalesi için teklif kabul edilir.</td>
+            <td>74.150,00 EUR</td>
+            <td class="tarih">12/06/2026</td>
+            <td class="kalan">+29 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9398" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>172/2026</td>
+            <td>Sivil Savunma Teşkilat Başkanlığı</td>
+            <td class="konu">Sivil Savunma Teşkilatı  Başkanlı  Temizlik  Hizmet Alımı için teklif kabul edilir.</td>
+            <td>40.249.137 TL</td>
+            <td class="tarih">12/06/2026</td>
+            <td class="kalan">+29 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9347" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>230/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">Mrı Cihaz Alım  İhalesi İhale için ayrılmış toplam tahmini değer : 2.095.000  EURO  KDV HARİÇ</td>
+            <td>2.095.000 EUR</td>
+            <td class="tarih">12/06/2026</td>
+            <td class="kalan">+29 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9349" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>210/2026</td>
+            <td>Polis Genel Müdürlüğü</td>
+            <td class="konu">Polis Genel Müdürlüğü, bünyesinde kullanılmakta olan fotokopi-kopi printer cihazlarının düzenli olarak bakım ve on arım hizmet alımı için teklif kabul edilir.</td>
+            <td>7,758,620.68 TL</td>
+            <td class="tarih">12/06/2026</td>
+            <td class="kalan">+29 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9329" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>278/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">KKTC Sağlık Bakanlığı, Yeni Girne Hastanesi 3. Kısım Tıbbi Cihazlar alımı ihalesi için teklif kabul edilir.</td>
+            <td>37.800,00 EUR</td>
+            <td class="tarih">12/06/2026</td>
+            <td class="kalan">+29 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9400" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>276/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">KKTC Sağlık Bakanlığı, Yeni Girne Hastanesi 5.Kısım Tıbbi Cihazlar alımı ihalesi için teklif kabul edilir.</td>
+            <td>219.485,00 EUR</td>
+            <td class="tarih">12/06/2026</td>
+            <td class="kalan">+29 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9403" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>275/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">KKTC Sağlık Bakanlığı, Yeni Girne Hastanesi 6.Kısım Tıbbi Cihazlar alımı ihalesi için teklif kabul edilir.</td>
+            <td>85.860,00 EUR</td>
+            <td class="tarih">12/06/2026</td>
+            <td class="kalan">+29 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9399" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>279/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">KKTC Sağlık Bakanlığı, Yeni Girne Hastanesi 2. Kısım Tıbbi Cihazlar alımı ihalesi için teklif kabul edilir.</td>
+            <td>93.620,00 EUR</td>
+            <td class="tarih">12/06/2026</td>
+            <td class="kalan">+29 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9401" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>280/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">KKTC Sağlık Bakanlığı, Yeni Girne Hastanesi MRI Uyumlu Anestezi Cihazı alımı ihalesi için teklif kabul edilir.</td>
+            <td>67.600,00 EUR</td>
+            <td class="tarih">12/06/2026</td>
+            <td class="kalan">+29 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9402" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>255/2026</td>
+            <td>Jeoloji ve Maden Dairesi Müdürlüğü</td>
+            <td class="konu">Başbakan Yardımcılığı,Turizm,Kültür,Gençlik ve Çevre Bakanlığı Jeoloji ve Maden Dairesi Temizlik  Hizmet Alımı için teklif kabul edilir.</td>
+            <td>690.129,00 TL</td>
+            <td class="tarih">12/06/2026</td>
+            <td class="kalan">+29 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9404" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>223/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">Dr. Burhan Nalbantoğlu Devlet Hastanesi KBB Endovizyon Sistemi Alım  İhalesi için teklif kabul edilir.</td>
+            <td>104,700 EUR</td>
+            <td class="tarih">17/06/2026</td>
+            <td class="kalan">+34 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9339" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>235/2026</td>
+            <td>Lefkoşa Kaymakamlığı</td>
+            <td class="konu">Lefkoşa  Kaymakamlığı  Temizlik  Hizmet Alımı için teklif kabul edilir.</td>
+            <td>745,687.65 TL</td>
+            <td class="tarih">17/06/2026</td>
+            <td class="kalan">+34 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9345" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>227/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">Sağlık Bakanlığı Mağusa Devlet Hastanesi İlave Birim Yapım İşleri için teklif kabul edilir.</td>
+            <td>61,677,646.25 TL</td>
+            <td class="tarih">17/06/2026</td>
+            <td class="kalan">+34 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9352" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>232/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">KKTC Sağlık Bakanlığı Mobil Kan Bankası Aracı Alım İhalesi için teklif kabul edilir.</td>
+            <td>137.931,00 EUR</td>
+            <td class="tarih">17/06/2026</td>
+            <td class="kalan">+34 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9353" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>105/2026</td>
+            <td>Sosyal Hizmetler Dairesi Müdürlüğü</td>
+            <td class="konu">Sosyal Hizmetler Dairesi  Engelsiz  Yaşamevi Temizlik ve Mutfak  İşleri  Hizmet Alımı için teklif kabul edilir.</td>
+            <td>10.434.852,00 TL</td>
+            <td class="tarih">17/06/2026</td>
+            <td class="kalan">+34 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9357" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>226/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">Sağlık Bakanlığı Gazi Mağusa Devlet Hastanesi Kvc Ameliyathane Tamir Tadilat Yapım İşleri için teklif kabul edilir.</td>
+            <td>12,674,851.00 TL</td>
+            <td class="tarih">17/06/2026</td>
+            <td class="kalan">+34 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9354" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>267/2026</td>
+            <td>Yüksek Mahkeme</td>
+            <td class="konu">Yüksek Mahkeme, Yeni Yüksek Mahkeme Binası  Temizlik  Hizmet Alımı için teklif kabul edilir.</td>
+            <td>2.300.430 TL</td>
+            <td class="tarih">17/06/2026</td>
+            <td class="kalan">+34 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9410" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>268/2026</td>
+            <td>Başbakanlık</td>
+            <td class="konu">KKTC Başbakanlık ve Bağlı Kurum ve Dairelerinin Temizlik  Hizmet   Alımı için teklif kabul edilir.</td>
+            <td>6.276.371,64 TL</td>
+            <td class="tarih">17/06/2026</td>
+            <td class="kalan">+34 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9411" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>132/2026</td>
+            <td>Milli Eğitim Bakanlığı</td>
+            <td class="konu">KKTC Milli Eğitim Bakanlığı, bünyesinde kullanılmakta olan muhtelif tip ve sayıda fotokopi makinesi alımı ihalesi için teklif kabul edilir.</td>
+            <td>3,362,068.00 TL</td>
+            <td class="tarih">19/06/2026</td>
+            <td class="kalan">+36 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9362" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>134/2026</td>
+            <td>Milli Eğitim Bakanlığı</td>
+            <td class="konu">KKTC Milli Eğitim Bakanlığı, bünyesinde kullanılmakta etkileşimli tahta tedariki ve kurulumu ihalesi için teklif kabul edilir.</td>
+            <td>19,245,680.00 TL</td>
+            <td class="tarih">19/06/2026</td>
+            <td class="kalan">+36 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9364" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>170/2026</td>
+            <td>AVRUPA BİRLİĞİ KOORDİNASYON MERKEZİ</td>
+            <td class="konu">Başbakanlık AB Koordinasyon Merkezi Temizlik Hizmet Alımı  (Malzemesiz) için teklif kabul edilir.</td>
+            <td>800.400,87 TL</td>
+            <td class="tarih">19/06/2026</td>
+            <td class="kalan">+36 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9366" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>199/2026</td>
+            <td>Karayolları Dairesi Müdürlüğü</td>
+            <td class="konu">Karayolları Dairesi Mormenekşe-alaniçi  Arası Anayolda  Çöken Kısımların Asfalt Kaplama Yapım İşleri için teklif kabul edilir.</td>
+            <td>5,799,832.32 TL</td>
+            <td class="tarih">19/06/2026</td>
+            <td class="kalan">+36 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9355" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>131/2026</td>
+            <td>Milli Eğitim Bakanlığı</td>
+            <td class="konu">KKTC Milli Eğitim Bakanlığı, bünyesinde kullanılmakta olan muhtelif tip ve sayıda ınventer splıt unit klima temini ve kurulumu ihalesi için teklif kabul edilir.</td>
+            <td>11,934,523.00 TL</td>
+            <td class="tarih">19/06/2026</td>
+            <td class="kalan">+36 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9361" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>133/2026</td>
+            <td>Milli Eğitim Bakanlığı</td>
+            <td class="konu">KKTC Milli Eğitim Bakanlığı, bünyesinde kullanılmakta olan kişisel bilgisyar alımı ihalesi için teklif kabul edilir.</td>
+            <td>10,237,068.00 TL</td>
+            <td class="tarih">19/06/2026</td>
+            <td class="kalan">+36 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9363" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>153/2026</td>
+            <td>Tarım ve Doğal Kaynaklar Bakanlığı</td>
+            <td class="konu">Tarım Ve Doğal Kaynaklar  Bakanlığı Tarımsal Araştırma Enstitüsü Müdürlüğü 2.El 4x4 (pic up) araç Alımı için teklif kabul edilir.</td>
+            <td>1.600.000 TL</td>
+            <td class="tarih">19/06/2026</td>
+            <td class="kalan">+36 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9365" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>231/2026</td>
+            <td>Trafik Dairesi</td>
+            <td class="konu">Bayındırlık ve Ulaştırma Bakanlığı, Trafik Dairesi Müdürlüğü, sinyalize kavşaklarda düzenleme, bakım ve onarım ihalesi için teklif kabul edilir.</td>
+            <td>2,712,000.00 TL</td>
+            <td class="tarih">24/06/2026</td>
+            <td class="kalan">+41 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:0::NO::P25_ID:9370" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>236/2026</td>
+            <td>Su İşleri Dairesi Müdürlüğü</td>
+            <td class="konu">Su İşleri Dairesi Yukarı Dikmen Kuzey Batı Havzasındaki Dere Üzerine Betonarme Islah Sekisi Projesi Yapim Işi için teklif kabul edilir.</td>
+            <td>22,250,000.00 TL</td>
+            <td class="tarih">24/06/2026</td>
+            <td class="kalan">+41 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:0::NO::P25_ID:9369" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>233/2026</td>
+            <td>Orman Dairesi Müdürlüğü</td>
+            <td class="konu">Tarım ve Doğal Kaynaklar Bakanlığı, Orman Dairesi Müdürlüğü, 4*4 yangına ilk müdahale araç alımı için teklif kabul edilir.</td>
+            <td>20,603,440.00 TL</td>
+            <td class="tarih">24/06/2026</td>
+            <td class="kalan">+41 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:0::NO::P25_ID:9371" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>238/2026</td>
+            <td>Telekomünikasyon Dairesi Müdürlüğü</td>
+            <td class="konu">Telekomünikasyon Dairesi,Otomasyon Sistemleri   Dijital Dönüşüm Projesi  Hizmet İhale için ayrılmış toplam tahmini değer:   45,689,655  TL  +  KDV</td>
+            <td>45,689,655 TL</td>
+            <td class="tarih">24/06/2026</td>
+            <td class="kalan">+41 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:0::NO::P25_ID:9372" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>150/2026</td>
+            <td>Orman Dairesi Müdürlüğü</td>
+            <td class="konu">Tarım Ve Doğal Kaynaklar  Bakanlığı  Orman Dairesi  Müdürlüğü  Fidanlık  İşleri Hizmet Alımı için teklif kabul edilir.</td>
+            <td>3.131.100,00 TL</td>
+            <td class="tarih">24/06/2026</td>
+            <td class="kalan">+41 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9373" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>213/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">Dr. Akçiçek Hastanesinin  Güvenlik  Hizmet Alımı için teklif kabul edilir.</td>
+            <td>13,939,911.00 TL</td>
+            <td class="tarih">24/06/2026</td>
+            <td class="kalan">+41 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9374" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>212/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">Sağlık Bakanlığı / Yataklı Tedavi Kurumları Dairesi ,Sağlık Bakanlığı’na Bağlı Tüm Birimlerde (Malzemesiz)Genel Hastahane Hizmetleri İşleri  Hizmet Alım  İhalesi için teklif  kabul edilir. İhale için ayrılmış toplam tahmini değer :              152,043,361.92  TL + KDV İhale için ayrılmış aylık ödenek (bloke) miktarı:   16,893,706.88 TL + KDV Geçici  teminat miktarı:                               </td>
+            <td>152,043,361.92 TL</td>
+            <td class="tarih">24/06/2026</td>
+            <td class="kalan">+41 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:924499016336::NO::P25_ID:9375" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>266/2026</td>
+            <td>İçişleri Bakanlığı</td>
+            <td class="konu">İçişleri Bakanlığı 2 Adet 4x4 Araç Alımı için teklif kabul edilir.</td>
+            <td>5,172,413.80 TL</td>
+            <td class="tarih">01/07/2026</td>
+            <td class="kalan">+48 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:0::NO::P25_ID:9390" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>248/2026</td>
+            <td>Bayrak Radyo ve Televizyon Kurumu (BRTK)</td>
+            <td class="konu">BRTK Lefkoşa Transmisyon Merkezi UPS İhalesiAlımı için teklif kabul edilir.</td>
+            <td>4,051,700.00 TL</td>
+            <td class="tarih">01/07/2026</td>
+            <td class="kalan">+48 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:0::NO::P25_ID:9379" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>057/2026</td>
+            <td>Gümrük ve Rüsumat Dairesi</td>
+            <td class="konu">Gümrük ve Rüsumat  Dairesi Müdürlüğü: (Malzemesiz) Temizlik  Hizmet  Alımı için teklif kabul edilir.</td>
+            <td>2.281.207,53 TL</td>
+            <td class="tarih">01/07/2026</td>
+            <td class="kalan">+48 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:0::NO::P25_ID:9381" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>254/2026</td>
+            <td>(Kıb-Tek) K.T. Elektrik Kurumu</td>
+            <td class="konu">Kıbrıs Türk Elektrik Kurumu Muhtelif Tür Ve Miktarda Switchgear Alımı için teklif kabul edilir.</td>
+            <td>2,207,991.29 EUR</td>
+            <td class="tarih">01/07/2026</td>
+            <td class="kalan">+48 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:0::NO::P25_ID:9376" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>250/2026</td>
+            <td>Kültür Dairesi</td>
+            <td class="konu">Başbakan Yardımcılığı Turizm Kültür Gençlik ve Çevre Bakanlığı, Kültür Dairesi,  Atatürk Kültür Merkezi Temizlik  Hizmet   Alımı için teklif kabul edilir.</td>
+            <td>1,226,908.28 TL</td>
+            <td class="tarih">03/07/2026</td>
+            <td class="kalan">+50 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:0::NO::P25_ID:9396" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>237/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">Dr.Burhan Nalbantoğlu Devlet Hastanesi Ayaktan Tanı ve Tedavi Merkezi Tamir,Tadilat Yapım İşleri için teklif kabul edilir.</td>
+            <td>70,886,171.60 TL</td>
+            <td class="tarih">08/07/2026</td>
+            <td class="kalan">+55 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:0::NO::P25_ID:9391" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>251/2026</td>
+            <td>Milli Eğitim Bakanlığı</td>
+            <td class="konu">Milli Eğitim Bakanlığına Bağlı Okullara 328 Adet Öğretmen Masası Ve 321 Adet Sınıf Panosu Alım İhalesiAlımı için teklif kabul edilir.</td>
+            <td> TL</td>
+            <td class="tarih">08/07/2026</td>
+            <td class="kalan">+55 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:0::NO::P25_ID:9392" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>229/2026</td>
+            <td>Sağlık Bakanlığı</td>
+            <td class="konu">Sağlık Bakanlığı İlaç Eczacılık Dairesi Mevcut Bina Tamir Tadilat Projesi Yapim Işi için teklif kabul edilir.</td>
+            <td>85.609.318,68 TL</td>
+            <td class="tarih">08/07/2026</td>
+            <td class="kalan">+55 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:0::NO::P25_ID:9394" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>261/2026</td>
+            <td>(Kıb-Tek) K.T. Elektrik Kurumu</td>
+            <td class="konu">Kıbrıs Türk Elektrik Kurumu ITM 19 TEKNECİK II, GİRNE II, LEFKOŞA ve MERİÇ TM’leri Tevsiat İşleri Projesi için teklif kabul edilir.</td>
+            <td>12.924.000,00 EUR</td>
+            <td class="tarih">08/07/2026</td>
+            <td class="kalan">+55 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:0::NO::P25_ID:9409" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>269/2026</td>
+            <td>Merkezi Cezaevi Müdürlüğü</td>
+            <td class="konu">İçişleri Bakanlığı Merkezi Cezaevi Müdürlüğü Mahkum Ve Personel Muhtelif Giyecek Malzemesi Alımı için teklif kabul edilir.</td>
+            <td>3.428.043,30 TL</td>
+            <td class="tarih">08/07/2026</td>
+            <td class="kalan">+55 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:0::NO::P25_ID:9412" target="_blank">Görüntüle →</a></td>
+        </tr>
+        <tr class="">
+            <td>246/2026</td>
+            <td>İçişleri Bakanlığı</td>
+            <td class="konu">KKTC İçişleri Bakanlığı Temizlik Hizmeti Alımı ihalesi için teklif kabul edilir.</td>
+            <td>8.948.275,83 TL</td>
+            <td class="tarih">08/07/2026</td>
+            <td class="kalan">+55 gün</td>
+            <td><a href="http://mik.gov.ct.tr/maliye/f?p=489:25:0::NO::P25_ID:9408" target="_blank">Görüntüle →</a></td>
+        </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <footer>
+        KKTC İhale Takip Sistemi — Otomatik olarak güncellenmektedir
+    </footer>
+
+    <script>
+        function filtrele() {
+            const q = document.getElementById('aramaInput').value.toLowerCase();
+            const satirlar = document.querySelectorAll('#tbodyIhale tr');
+            satirlar.forEach(tr => {
+                tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>
